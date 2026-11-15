@@ -15,7 +15,7 @@ class ItemTest {
 	}
 
 
-	//Tests happy path and edge cases got get and toString methods
+	//Tests happy path and edge cases for get and toString methods
 	@ParameterizedTest
 	@CsvSource({
 		"'Rusty Key', 'Opens the cellar'",
