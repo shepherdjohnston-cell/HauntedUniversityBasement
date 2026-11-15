@@ -1,4 +1,4 @@
-# aunted University Basement
+# Haunted University Basement
 
 A deterministic Java 17 Maven backend project designed for students to write JUnit tests.
 
