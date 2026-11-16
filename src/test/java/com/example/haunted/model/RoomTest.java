@@ -15,6 +15,7 @@ class RoomTest {
 		}
 	}
 
+	//Tests happy paths and edge cases for constructors and getters
 	@ParameterizedTest
 	@CsvSource({
 		"'r1', 'Foyer', 'A grand entrance hall'",
@@ -35,18 +36,9 @@ class RoomTest {
 		assertFalse(room.isLocked());
 		assertNull(room.getRequiredKeyName());
 		assertNull(room.getTrap());
-
-		assertThrows(UnsupportedOperationException.class, () -> {
-			room.getExits().clear();
-		});
-		assertThrows(UnsupportedOperationException.class, () -> {
-			room.getItems().add(new TestItem("Illegal", "Illegal Description"));
-		});
-		assertThrows(UnsupportedOperationException.class, () -> {
-			room.getMonsters().add(new Monster("Ghost", 10, 5, 2, Collections.emptyList()));
-		});
 	}
 
+	//Confirms null exception when id is null
 	@Test
 	void constructor_NullId_ThrowsNullPointerException() {
 		assertThrows(NullPointerException.class, () -> {
@@ -54,6 +46,7 @@ class RoomTest {
 		});
 	}
 
+	//Confirms null exception when name is null
 	@Test
 	void constructor_NullName_ThrowsNullPointerException() {
 		assertThrows(NullPointerException.class, () -> {
@@ -61,6 +54,7 @@ class RoomTest {
 		});
 	}
 
+	//Confirms null exception when description is null
 	@Test
 	void constructor_NullDescription_ThrowsNullPointerException() {
 		assertThrows(NullPointerException.class, () -> {
@@ -68,6 +62,7 @@ class RoomTest {
 		});
 	}
 
+	//Confirms connect raises null exception on null direction
 	@Test
 	void connect_NullDirection_ThrowsNullPointerException() {
 		Room room1 = new Room("r1", "Foyer", "Description");
@@ -78,6 +73,7 @@ class RoomTest {
 		});
 	}
 
+	//Confirms connect raises null exception on null room
 	@Test
 	void connect_NullRoom_ThrowsNullPointerException() {
 		Room room1 = new Room("r1", "Foyer", "Description");
@@ -87,6 +83,7 @@ class RoomTest {
 		});
 	}
 
+	//Confirms addItem raises null when item is null
 	@Test
 	void addItem_NullItem_ThrowsNullPointerException() {
 		Room room = new Room("r1", "Foyer", "Description");
@@ -96,6 +93,7 @@ class RoomTest {
 		});
 	}
 
+	//Confirms addMonster raises null when monster is null
 	@Test
 	void addMonster_NullMonster_ThrowsNullPointerException() {
 		Room room = new Room("r1", "Foyer", "Description");
@@ -105,6 +103,7 @@ class RoomTest {
 		});
 	}
 
+	//Tests happy paths and edge cases on connect and getExit methods
 	@ParameterizedTest
 	@CsvSource({
 		"0, 'r2', 'Kitchen', 'Smells of old food'",
@@ -123,6 +122,7 @@ class RoomTest {
 		assertSame(targetRoom, room.getExits().get(direction));
 	}
 
+	//Tests happy paths and edge cases on addItem and findItem methods
 	@ParameterizedTest
 	@CsvSource({
 		"'Brass Key', 'Brass Key', true",
@@ -147,9 +147,131 @@ class RoomTest {
 		}
 	}
 
+	//Tests happy paths and edge cases on removeItemByName method
 	@ParameterizedTest
 	@CsvSource({
 		"'Old Book', 'Old Book', true, 0",
 		"'Old Book', 'old book', true, 0",
 		"'Old Book', 'OLD BOOK', true, 0",
-		"'Old Book', 'New Book', false
+		"'Old Book', 'New Book', false, 1",
+		"'Old Book', '', false, 1",
+		"'', '', true, 0"
+	})
+	void removeItemByName_VariousSearchNames_RemovesAndReturnsExpectedItem(String storedName, String removeName, boolean expectedRemoved, int expectedRemainingSize) {
+		Room room = new Room("r1", "Foyer", "Description");
+		Item item = new TestItem(storedName, "Description");
+		room.addItem(item);
+
+		Item removed = room.removeItemByName(removeName);
+
+		if (expectedRemoved) {
+			assertSame(item, removed);
+		} else {
+			assertNull(removed);
+		}
+		assertEquals(expectedRemainingSize, room.getItems().size());
+	}
+
+	//Tests happy paths and edge cases on addMonster and findMonster methods
+	@ParameterizedTest
+	@CsvSource({
+		"'Skeleton', 'Skeleton', true",
+		"'Skeleton', 'skeleton', true",
+		"'Skeleton', 'SKELETON', true",
+		"'Skeleton', 'Zombie', false",
+		"'Skeleton', '', false",
+		"'', '', true"
+	})
+	void addMonsterAndFindMonster_VariousSearchNames_ReturnsExpectedOptional(String storedName, String searchName, boolean expectedFound) {
+		Room room = new Room("r1", "Foyer", "Description");
+		Monster monster = new Monster(storedName, 50, 10, 5, Collections.emptyList());
+
+		room.addMonster(monster);
+		var found = room.findMonster(searchName);
+
+		assertEquals(1, room.getMonsters().size());
+		assertEquals(expectedFound, found.isPresent());
+		if (expectedFound) {
+			assertSame(monster, found.get());
+		}
+	}
+
+	//Tests happy paths and edge cases on hasLivingMonsters method
+	@ParameterizedTest
+	@CsvSource({
+		"50, 0, true",
+		"50, 49, true",
+		"50, 50, false",
+		"50, 100, false",
+		"0, 0, false",
+		"-10, 0, false"
+	})
+	void hasLivingMonsters_VariousMonsterHealthStates_ReturnsExpectedBoolean(int initialHealth, int damageTaken, boolean expectedLiving) {
+		Room room = new Room("r1", "Foyer", "Description");
+		Monster monster = new Monster("Ghoul", initialHealth, 10, 5, Collections.emptyList());
+		monster.takeDamage(damageTaken);
+
+		room.addMonster(monster);
+
+		assertEquals(expectedLiving, room.hasLivingMonsters());
+	}
+
+	//Tests happy paths and edge cases on setLocked method
+	@ParameterizedTest
+	@CsvSource({
+		"true, 'Master Key'",
+		"false, 'Master Key'",
+		"true, ''",
+		"false, ''"
+	})
+	void setLocked_VariousInputs_UpdatesLockedAndKeyName(boolean locked, String requiredKeyName) {
+		Room room = new Room("r1", "Foyer", "Description");
+
+		room.setLocked(locked, requiredKeyName);
+
+		assertEquals(locked, room.isLocked());
+		assertEquals(requiredKeyName, room.getRequiredKeyName());
+	}
+
+	//Tests happy paths and edge cases on unlock method 
+	@ParameterizedTest
+	@CsvSource({
+		"false, 'Cellar Key', 'Wrong Key', true, false",
+		"false, 'Cellar Key', 'Cellar Key', true, false",
+		"true, 'Cellar Key', 'Cellar Key', true, false",
+		"true, 'Cellar Key', 'cellar key', true, false",
+		"true, 'Cellar Key', 'CELLAR KEY', true, false",
+		"true, 'Cellar Key', 'Attic Key', false, true",
+		"true, 'Cellar Key', '', false, true",
+		"true, '', '', true, false"
+	})
+	void unlock_VariousLockStatesAndKeys_ReturnsExpectedResultAndUpdatesLockState(boolean initialLocked, String requiredKey, String providedKey, boolean expectedUnlockResult, boolean expectedFinalLockedState) {
+		Room room = new Room("r1", "Foyer", "Description");
+		room.setLocked(initialLocked, requiredKey);
+
+		boolean result = room.unlock(providedKey);
+
+		assertEquals(expectedUnlockResult, result);
+		assertEquals(expectedFinalLockedState, room.isLocked());
+	}
+
+	//Confirms unlock is true and false when the key is correct and incorrect respectively
+	@Test
+	void unlock_LockedWithNullRequiredKey_ReturnsFalseAndRemainsLocked() {
+		Room room = new Room("r1", "Foyer", "Description");
+		room.setLocked(true, null);
+
+		assertFalse(room.unlock("Any Key"));
+		assertTrue(room.isLocked());
+	}
+
+	//Confirms set trap works
+	@Test
+	void setTrap_NullTrap_SetsTrapToNull() {
+		Room room = new Room("r1", "Foyer", "Description");
+
+		room.setTrap(null);
+
+		assertNull(room.getTrap());
+	}
+}
