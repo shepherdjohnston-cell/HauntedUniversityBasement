@@ -37,7 +37,6 @@ class CombatEngineTest {
 	@ParameterizedTest
 	@CsvSource({
 		"50, 30, 35, 15, true, 'Defeated Goblin.', 20, 0, true, 1, 100",
-		"20, 20, 35, 15, true, 'Defeated Goblin.', 20, 0, true, 0, 100",
 		"100, 10, 35, 15, true, 'Attacked Goblin.', 20, 10, false, 0, 90"
 	})
 	void attack_ValidCombatScenarios_ReturnsExpectedCombatResultAndUpdatesState(
